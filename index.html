@@ -880,6 +880,13 @@ const el = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const rub = (n) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 2 }));
 const mln = (n) => (n === null || n === undefined ? null : Math.round(n / 1e6).toLocaleString("ru-RU"));
+/** Склонение существительного при числе: 1 компания, 2 компании, 5 компаний. */
+function plural(n, one, few, many) {
+  const d = Math.abs(n) % 100;
+  if (d >= 11 && d <= 14) return many;
+  const last = d % 10;
+  return last === 1 ? one : last >= 2 && last <= 4 ? few : many;
+}
 const pct = (x) => Math.round(x * 100);
 const unitOf = (u) => UNIT_LABEL[u] ?? u;
 
@@ -1070,7 +1077,7 @@ function run() {
   el("tally").innerHTML = `
     <div><b>${results.length}</b> <span class="unit">в выдаче</span></div>
     <div><b>${excluded.length}</b> <span class="unit">отсеяно</span></div>
-    <div><b>${DB.suppliers.length.toLocaleString("ru")}</b> <span class="unit">компаний в базе</span></div>
+    <div><b>${DB.suppliers.length.toLocaleString("ru")}</b> <span class="unit">${plural(DB.suppliers.length, "компания", "компании", "компаний")} в базе</span></div>
     <div class="weights">веса ${q.mode}: товар ${pct(weights.product)} · цена ${pct(weights.price)} · логистика ${pct(weights.logistics)} · надёжность ${pct(weights.trust)}</div>`;
   el("out").innerHTML = results.length
     ? results.map(rowHtml).join("")
@@ -1082,8 +1089,8 @@ function run() {
 const withRevenue = DB.suppliers.filter((s) => s.revenueRub != null).length;
 el("scope").textContent =
   ` В прототипе ${DB.suppliers.length.toLocaleString("ru")} ` +
-  `${DB.suppliers.length % 10 === 1 && DB.suppliers.length % 100 !== 11 ? "компания" : "компаний"}` +
-  `${withRevenue === DB.suppliers.length ? ", у всех есть выручка за 2025 год" : ""}.`;
+  `${plural(DB.suppliers.length, "компания", "компании", "компаний")}` +
+  `${withRevenue === DB.suppliers.length ? " с выручкой от 100 млн ₽ за 2025 год" : ""}.`;
 
 el("q").addEventListener("submit", (e) => { e.preventDefault(); run(); });
 el("q").addEventListener("change", run);
