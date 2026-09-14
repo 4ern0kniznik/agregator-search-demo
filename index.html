@@ -1,0 +1,937 @@
+<title>Поиск поставщика</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --ground: #eceff1;
+  --surface: #ffffff;
+  --surface-2: #f6f8f9;
+  --ink: #151a1f;
+  --muted: #5b6670;
+  --line: #d5dce2;
+  --line-soft: #e5eaee;
+  --accent: #0b6e7f;
+  --accent-soft: #ddeef0;
+  --good: #1c7a4c;
+  --good-soft: #dcefe4;
+  --warn: #9c5f0c;
+  --warn-soft: #f6e9d5;
+  --bad: #ae3a2e;
+  --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --cond: "IBM Plex Sans Condensed", "IBM Plex Sans", -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0e1316; --surface: #161c21; --surface-2: #1b2228;
+    --ink: #e4eaef; --muted: #93a0ab; --line: #27313a; --line-soft: #202930;
+    --accent: #45bfd1; --accent-soft: #14333a;
+    --good: #46c286; --good-soft: #14301f;
+    --warn: #d79a4a; --warn-soft: #32250f;
+    --bad: #e4756a;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0e1316; --surface: #161c21; --surface-2: #1b2228;
+  --ink: #e4eaef; --muted: #93a0ab; --line: #27313a; --line-soft: #202930;
+  --accent: #45bfd1; --accent-soft: #14333a;
+  --good: #46c286; --good-soft: #14301f;
+  --warn: #d79a4a; --warn-soft: #32250f;
+  --bad: #e4756a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 16px 72px; }
+.masthead { padding-block: 28px 20px; border-bottom: 2px solid var(--ink); margin-bottom: 24px; }
+.eyebrow {
+  font-family: var(--cond); font-weight: 600; font-size: 11px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--muted);
+}
+h1 {
+  font-family: var(--cond); font-weight: 700; font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.02; margin: 6px 0 8px; letter-spacing: -0.01em; text-wrap: balance;
+}
+.lede { color: var(--muted); max-width: 62ch; margin: 0; font-size: 15px; }
+.layout { display: grid; grid-template-columns: 322px minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 940px) { .layout { grid-template-columns: 1fr; } }
+.rail {
+  position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--line);
+  display: grid; gap: 0;
+}
+@media (max-width: 940px) { .rail { position: static; } }
+.rail fieldset { border: 0; border-top: 1px solid var(--line-soft); margin: 0; padding: 14px 16px; display: grid; gap: 10px; }
+.rail fieldset:first-of-type { border-top: 0; }
+legend {
+  font-family: var(--cond); font-size: 11px; font-weight: 600; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--muted); padding: 0;
+}
+.mode { display: grid; grid-template-columns: 1fr 1fr; }
+.mode button {
+  font: inherit; font-family: var(--cond); font-weight: 600; font-size: 13px;
+  letter-spacing: .04em; text-transform: uppercase; padding: 11px 8px; cursor: pointer;
+  border: 0; border-bottom: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+}
+.mode button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+:root[data-theme="dark"] .mode button[aria-pressed="true"], 
+:root:not([data-theme="light"]) .mode button[aria-pressed="true"] { color: #0e1316; }
+label.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+input[type="text"], input[type="number"], select {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 2px; padding: 8px 9px; width: 100%;
+}
+input[type="number"] { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+.pair { display: grid; grid-template-columns: 1fr 92px; gap: 8px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink); cursor: pointer; }
+.check input { margin: 3px 0 0; accent-color: var(--accent); }
+.check span small { display: block; color: var(--muted); font-size: 11.5px; line-height: 1.35; }
+.rail .go { padding: 14px 16px; border-top: 1px solid var(--line-soft); }
+.go button {
+  font-family: var(--cond); font-weight: 600; font-size: 15px; letter-spacing: .03em;
+  width: 100%; padding: 11px; border: 0; border-radius: 2px; cursor: pointer;
+  background: var(--ink); color: var(--ground);
+}
+.go button:hover { background: var(--accent); color: var(--surface); }
+.tally {
+  display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline;
+  padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 4px;
+}
+.tally b { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+.tally .unit { font-family: var(--cond); text-transform: uppercase; font-size: 11px; letter-spacing: .1em; color: var(--muted); }
+.tally .weights { margin-left: auto; color: var(--muted); font-size: 12px; font-family: var(--mono); }
+.row { display: block; border-bottom: 1px solid var(--line-soft); padding: 18px 0; }
+.row > summary { list-style: none; cursor: pointer; display: block; }
+.row > summary::-webkit-details-marker { display: none; }
+.row-top { display: grid; grid-template-columns: 34px minmax(0,1fr) auto auto; gap: 14px; align-items: start; }
+@media (max-width: 620px) { .row-top { grid-template-columns: 26px minmax(0,1fr); } }
+.rank { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--muted); line-height: 1.2; }
+.name { font-family: var(--cond); font-weight: 700; font-size: 19px; line-height: 1.2; }
+.item { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.chip {
+  font-size: 11.5px; font-family: var(--cond); font-weight: 500; letter-spacing: .03em;
+  padding: 2px 7px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.chip.on { background: var(--good-soft); border-color: transparent; color: var(--good); }
+.chip.hl { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.money { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.money .u { font-size: 19px; font-weight: 600; }
+.money .t, .money .d { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+.total { text-align: right; }
+.mark { font-family: var(--mono); font-size: 27px; font-weight: 600; line-height: 1; }
+.mark-cap { font-family: var(--cond); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 620px) {
+  .money, .total { grid-column: 2; text-align: left; }
+  .money { margin-top: 8px; }
+}
+.meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 14px 0 0 48px; }
+@media (max-width: 620px) { .meters { grid-template-columns: repeat(2, 1fr); margin-left: 26px; } }
+.meter .cap {
+  display: flex; justify-content: space-between; gap: 6px; font-size: 11px; color: var(--muted);
+  font-family: var(--cond); letter-spacing: .04em; text-transform: uppercase;
+}
+.meter .cap b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.meter .track { height: 5px; background: var(--line); margin-top: 3px; }
+.meter .track i { display: block; height: 100%; background: var(--accent); }
+.meter.low .track i { background: var(--warn); }
+.why { margin: 12px 0 0 48px; display: grid; gap: 3px; font-size: 13px; color: var(--muted); }
+@media (max-width: 620px) { .why { margin-left: 26px; } }
+.why span::before { content: "— "; color: var(--line); }
+.open {
+  margin: 10px 0 0 48px; font-family: var(--cond); font-weight: 600; font-size: 11px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
+}
+@media (max-width: 620px) { .open { margin-left: 26px; } }
+.row[open] .open { color: var(--muted); }
+.row > summary:hover .name { color: var(--accent); }
+.row > summary:hover { background: var(--surface-2); }
+.detail { margin: 14px 0 2px 48px; border-left: 2px solid var(--accent); padding: 2px 0 2px 14px; }
+@media (max-width: 620px) { .detail { margin-left: 26px; } }
+.detail h4 { font-family: var(--cond); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th {
+  text-align: left; font-family: var(--cond); font-weight: 600; font-size: 10.5px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted); padding: 4px 12px 6px 0; border-bottom: 1px solid var(--line);
+}
+td { padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.contact { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+.cut { margin-top: 26px; border: 1px solid var(--line); background: var(--surface); }
+.cut > summary {
+  cursor: pointer; padding: 12px 16px; font-family: var(--cond); font-weight: 600;
+  font-size: 13px; letter-spacing: .05em; text-transform: uppercase;
+}
+.cut > summary b { font-family: var(--mono); color: var(--warn); }
+.cut .scroll { padding: 0 16px 14px; }
+.void { padding: 44px 0; color: var(--muted); border-bottom: 1px solid var(--line-soft); }
+.colophon {
+  margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 12px; max-width: 74ch;
+}
+.colophon code { font-family: var(--mono); font-size: 11.5px; }
+@media (prefers-reduced-motion: no-preference) {
+  .meter .track i { transition: width .25s ease; }
+}
+</style>
+<div class="shell">
+  <header class="masthead">
+    <div class="eyebrow">Прототип · демо-база вымышленная</div>
+    <h1>Поиск поставщика</h1>
+    <p class="lede">
+      Задайте параметры закупки — что, сколько, куда, к какому сроку и за сколько.
+      Сервис отберёт поставщиков, которые физически смогут отгрузить партию, и объяснит,
+      почему каждый занял своё место. Отдельно показано, кого и почему отсеяли.
+    </p>
+  </header>
+
+  <div class="layout">
+    <form class="rail" id="q">
+      <div class="mode" role="group" aria-label="Режим подбора">
+        <button type="button" id="m-b2b" data-mode="b2b" aria-pressed="true">Закупка</button>
+        <button type="button" id="m-b2c" data-mode="b2c" aria-pressed="false">Розница</button>
+      </div>
+
+      <fieldset>
+        <legend>Что нужно</legend>
+        <label class="field" for="f-text">Запрос
+          <input type="text" id="f-text" value="кабель ВВГнг 3х2,5" placeholder="кабель ВВГнг 3х2,5">
+        </label>
+        <label class="field" for="f-cat">Категория
+          <select id="f-cat"></select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Сколько</legend>
+        <div class="pair">
+          <label class="field" for="f-qty">Объём партии
+            <input type="number" id="f-qty" value="1000" min="0" step="any">
+          </label>
+          <label class="field" for="f-unit">Единица
+            <select id="f-unit"></select>
+          </label>
+        </div>
+        <label class="field" for="f-budget">Бюджет за единицу, ₽
+          <input type="number" id="f-budget" placeholder="не ограничен" min="0" step="any">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Куда и когда</legend>
+        <label class="field" for="f-region">Регион поставки
+          <select id="f-region"></select>
+        </label>
+        <label class="field" for="f-lead">Срок не более, дней
+          <input type="number" id="f-lead" value="14" min="1">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Кто и на каких условиях</legend>
+        <label class="field" for="f-type">Тип поставщика
+          <select id="f-type"></select>
+        </label>
+        <label class="field" for="f-pay">Условия оплаты
+          <select id="f-pay"></select>
+        </label>
+        <label class="check" for="f-inn">
+          <input type="checkbox" id="f-inn">
+          <span>Только с проверенным ИНН<small>контрольная цифра сходится</small></span>
+        </label>
+      </fieldset>
+
+      <div class="go"><button type="submit">Подобрать</button></div>
+    </form>
+
+    <main>
+      <div class="tally" id="tally"></div>
+      <div id="out"></div>
+      <div id="cut"></div>
+
+      <p class="colophon">
+        Это кликабельный прототип на настоящем движке подбора: те же четыре оси оценки,
+        те же жёсткие фильтры и то же объяснение каждого балла, что и в приложении.
+        Отличие одно — расчёт идёт в браузере на демо-базе из 24 поставщиков и 104 предложений.
+        Названия компаний, ИНН и цены вымышлены и не принадлежат реальным организациям.
+        В рабочей версии данные приходят импортом прайса (<code>XLSX · CSV · YML</code>),
+        парсерами сайтов поставщиков и через API.
+      </p>
+    </main>
+  </div>
+</div>
+
+<script>
+/**
+ * Нормализация входных данных.
+ *
+ * Прайсы приходят от разных поставщиков и в разных форматах: единицы пишут
+ * как "шт", "шт.", "pcs"; регион — как "Москва", "г. Москва", "МСК".
+ * Движок подбора работает только с нормализованными значениями, поэтому
+ * любая точка входа (импорт прайса, парсер, API) обязана пройти через этот
+ * модуль. Зависимостей нет намеренно: модуль запускается и в Next, и в
+ * тестах через `node --test` без сборки.
+ */
+
+/** Регистр, ё→е, схлопывание пробелов и мусорных символов. */
+function norm(s) {
+  if (s === null || s === undefined) return "";
+  return String(s)
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/[«»"'`]/g, " ")
+    .replace(/[^\p{L}\p{N}.,\-+/\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Токены для текстового сопоставления.
+ *
+ * Запятая внутри числа — часть размера ("3х2,5"), а не разделитель списка,
+ * поэтому режем по запятой только там, где за ней не цифра. Однобуквенные
+ * слова выбрасываем, одиночные цифры оставляем: "1" в "база 1" значима.
+ */
+function tokens(s) {
+  return norm(s)
+    .split(/[\s/]+|,(?!\d)/)
+    .map((t) => t.replace(/^[.,\-+]+|[.,\-+]+$/g, ""))
+    .filter((t) => t.length > 1 || /\d/.test(t));
+}
+
+const UNIT_MAP = new Map([
+  ["шт", "pcs"], ["шт.", "pcs"], ["штука", "pcs"], ["pcs", "pcs"], ["ед", "pcs"],
+  ["кг", "kg"], ["килограмм", "kg"], ["kg", "kg"],
+  ["т", "t"], ["тонна", "t"], ["тн", "t"], ["t", "t"],
+  ["г", "g"], ["грамм", "g"], ["g", "g"],
+  ["л", "l"], ["литр", "l"], ["l", "l"],
+  ["м", "m"], ["метр", "m"], ["m", "m"],
+  ["м2", "m2"], ["кв.м", "m2"], ["м²", "m2"],
+  ["м3", "m3"], ["куб.м", "m3"], ["м³", "m3"],
+  ["упак", "pack"], ["уп", "pack"], ["упаковка", "pack"],
+]);
+
+/** Единица измерения → канонический код. Неизвестную не выдумываем. */
+function normUnit(u) {
+  const k = norm(u).replace(/\.$/, "");
+  return UNIT_MAP.get(k) ?? null;
+}
+
+/** Коэффициенты к базовой единице внутри одного семейства. */
+const UNIT_FAMILY = {
+  t: { base: "kg", k: 1000 }, kg: { base: "kg", k: 1 }, g: { base: "kg", k: 0.001 },
+  l: { base: "l", k: 1 },
+  pcs: { base: "pcs", k: 1 }, pack: { base: "pcs", k: 1 },
+  m: { base: "m", k: 1 }, m2: { base: "m2", k: 1 }, m3: { base: "m3", k: 1 },
+};
+
+/**
+ * Перевод количества в базовую единицу семейства.
+ * Возвращает null, если единицы из разных семейств: тонны в литры
+ * пересчитывать без плотности нельзя, и молча делать вид, что можно, — хуже,
+ * чем честно вернуть "не сравнимо".
+ */
+function toBase(qty, unit) {
+  const u = normUnit(unit);
+  const f = u && UNIT_FAMILY[u];
+  if (!f || !Number.isFinite(qty)) return null;
+  return { qty: qty * f.k, unit: f.base };
+}
+
+/** Число из прайса: "1 234,56 ₽", "1234.56", "от 900" → 1234.56 / 900. */
+function num(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (v === null || v === undefined) return null;
+  const s = String(v)
+    .replace(/ /g, " ")
+    .replace(/[^\d.,\-]/g, "")
+    .replace(/\s/g, "");
+  if (!s) return null;
+  // 1.234,56 → 1234.56 ; 1,234.56 → 1234.56 ; 1234,56 → 1234.56
+  let t = s;
+  if (s.includes(",") && s.includes(".")) {
+    t = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (s.includes(",")) {
+    t = s.replace(",", ".");
+  }
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+const REGION_ALIASES = new Map([
+  ["мск", "Москва"], ["москва", "Москва"], ["г москва", "Москва"], ["московская область", "Московская область"], ["мо", "Московская область"],
+  ["спб", "Санкт-Петербург"], ["санкт-петербург", "Санкт-Петербург"], ["питер", "Санкт-Петербург"], ["ленинградская область", "Ленинградская область"],
+  ["екб", "Свердловская область"], ["екатеринбург", "Свердловская область"], ["свердловская область", "Свердловская область"],
+  ["нск", "Новосибирская область"], ["новосибирск", "Новосибирская область"], ["новосибирская область", "Новосибирская область"],
+  ["краснодар", "Краснодарский край"], ["краснодарский край", "Краснодарский край"],
+  ["казань", "Татарстан"], ["татарстан", "Татарстан"], ["республика татарстан", "Татарстан"],
+  ["нн", "Нижегородская область"], ["нижний новгород", "Нижегородская область"], ["нижегородская область", "Нижегородская область"],
+  ["рф", "Россия"], ["россия", "Россия"], ["вся россия", "Россия"],
+]);
+
+/** Регион → каноническое имя. Незнакомый регион возвращаем как есть. */
+function normRegion(r) {
+  const k = norm(r).replace(/^г\.?\s+/, "").replace(/^обл\.?\s+/, "");
+  return REGION_ALIASES.get(k) ?? (r ? String(r).trim() : null);
+}
+
+/** Проверка контрольных цифр ИНН (10 и 12 знаков). */
+function validInn(inn) {
+  const s = String(inn ?? "").replace(/\D/g, "");
+  const d = s.split("").map(Number);
+  const cs = (coef) => coef.reduce((a, c, i) => a + c * d[i], 0) % 11 % 10;
+  if (s.length === 10) return cs([2, 4, 10, 3, 5, 9, 4, 6, 8]) === d[9];
+  if (s.length === 12) {
+    return cs([7, 2, 4, 10, 3, 5, 9, 4, 6, 8]) === d[10] && cs([3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]) === d[11];
+  }
+  return false;
+}
+
+/** Slug для URL: кириллица → латиница. */
+const TRANSLIT = { а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"h",ц:"c",ч:"ch",ш:"sh",щ:"sch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya" };
+function slugify(s) {
+  return norm(s).split("").map((ch) => TRANSLIT[ch] ?? ch).join("")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+
+/**
+ * Движок подбора поставщиков.
+ *
+ * Вход — параметры закупки (что, сколько, куда, к какому сроку, за сколько),
+ * выход — ранжированный список поставщиков с разбором, почему каждый занял
+ * своё место, и отдельный список отсеянных с причиной отсева.
+ *
+ * Принципы, из которых вырос этот файл:
+ * 1. Жёсткие ограничения (MOQ, срок, регион, несовместимые единицы) не
+ *    "штрафуются", а отсеивают предложение с явной причиной. Закупщику
+ *    вредно видеть в топе поставщика, который физически не отгрузит партию.
+ * 2. Ни одна оценка не берётся с потолка: каждый балл раскладывается на
+ *    четыре оси и сопровождается текстовым объяснением.
+ * 3. Чего не знаем — не выдумываем: отсутствующее поле снижает оценку
+ *    полноты данных, но не заменяется "средним по рынку".
+ */
+
+
+const DEFAULT_WEIGHTS = {
+  b2b: { product: 0.35, price: 0.25, logistics: 0.15, trust: 0.25 },
+  b2c: { product: 0.35, price: 0.35, logistics: 0.2, trust: 0.1 },
+};
+
+const AXIS_LABEL = {
+  product: "Соответствие товара",
+  price: "Цена и объём",
+  logistics: "География и срок",
+  trust: "Надёжность",
+};
+
+/* ------------------------------------------------------------------ */
+/* Цена                                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Цена за единицу при заданном объёме с учётом лестницы скидок.
+ * tiers: [{ minQty, price }] — цена действует от minQty и выше.
+ */
+function effectiveUnitPrice(offer, qty) {
+  const base = num(offer.price);
+  if (base === null) return null;
+  const tiers = Array.isArray(offer.priceTiers) ? [...offer.priceTiers] : [];
+  const applicable = tiers
+    .filter((t) => num(t.minQty) !== null && num(t.price) !== null && qty >= num(t.minQty))
+    .sort((a, b) => num(b.minQty) - num(a.minQty))[0];
+  return applicable ? num(applicable.price) : base;
+}
+
+/**
+ * Количество из запроса в единицах предложения.
+ * null — единицы из разных семейств, сравнивать нельзя.
+ */
+function qtyInOfferUnit(qty, queryUnit, offerUnit) {
+  const qu = normUnit(queryUnit);
+  const ou = normUnit(offerUnit);
+  if (!qu || !ou) return null;
+  if (qu === ou) return qty;
+  const a = toBase(qty, qu);
+  const b = toBase(1, ou);
+  if (!a || !b || a.unit !== b.unit) return null;
+  return a.qty / b.qty;
+}
+
+/* ------------------------------------------------------------------ */
+/* Оси оценки                                                           */
+/* ------------------------------------------------------------------ */
+
+/** Соответствие товара: текст + категория + атрибуты. */
+function scoreProduct(query, offer) {
+  const reasons = [];
+  let score = 0;
+
+  const qTokens = tokens([query.text, ...(query.brands ?? [])].filter(Boolean).join(" "));
+  const oText = [offer.name, offer.brand, offer.category, ...Object.values(offer.attrs ?? {})]
+    .filter((v) => typeof v === "string" || typeof v === "number")
+    .join(" ");
+  const oTokens = new Set(tokens(oText));
+
+  if (qTokens.length) {
+    const hit = qTokens.filter((t) => oTokens.has(t) || [...oTokens].some((o) => o.startsWith(t) && t.length >= 4));
+    const textScore = hit.length / qTokens.length;
+    score += 0.6 * textScore;
+    if (hit.length) reasons.push(`совпало по запросу: ${hit.join(", ")}`);
+  } else {
+    score += 0.6;
+  }
+
+  if (query.category) {
+    const same = norm(query.category) === norm(offer.category);
+    score += same ? 0.2 : 0;
+    if (same) reasons.push(`категория «${offer.category}»`);
+  } else {
+    score += 0.2;
+  }
+
+  const wanted = Object.entries(query.attrs ?? {}).filter(([, v]) => v !== "" && v != null);
+  if (wanted.length) {
+    let ok = 0;
+    for (const [k, v] of wanted) {
+      const have = offer.attrs?.[k];
+      const values = Array.isArray(v) ? v : [v];
+      const match = have != null && values.some((x) => norm(x) === norm(have));
+      if (match) { ok += 1; reasons.push(`${k}: ${have}`); }
+    }
+    score += 0.2 * (ok / wanted.length);
+  } else {
+    score += 0.2;
+  }
+
+  return { score: Math.min(1, score), reasons };
+}
+
+/** Цена: относительно лучшей цены в выборке и относительно бюджета. */
+function scorePrice(unitPrice, bestUnitPrice, budgetPerUnit) {
+  const reasons = [];
+  if (unitPrice === null) return { score: 0, reasons: ["цена не указана"] };
+  let score = bestUnitPrice && unitPrice > 0 ? Math.min(1, bestUnitPrice / unitPrice) : 1;
+  if (bestUnitPrice && unitPrice <= bestUnitPrice * 1.001) reasons.push("лучшая цена в выборке");
+  else if (bestUnitPrice) reasons.push(`дороже лучшей на ${Math.round((unitPrice / bestUnitPrice - 1) * 100)} %`);
+  if (budgetPerUnit) {
+    if (unitPrice <= budgetPerUnit) reasons.push("в бюджет укладывается");
+    else {
+      score *= 0.5;
+      reasons.push(`выше бюджета на ${Math.round((unitPrice / budgetPerUnit - 1) * 100)} %`);
+    }
+  }
+  return { score, reasons };
+}
+
+/** География и срок поставки. */
+function scoreLogistics(query, supplier, offer) {
+  const reasons = [];
+  let geo = 0.3;
+  const target = normRegion(query.region);
+  const ships = (supplier.shipsTo ?? []).map(normRegion);
+  const home = normRegion(supplier.region);
+
+  if (!target) { geo = 1; }
+  else if (home === target) { geo = 1; reasons.push(`поставщик в регионе «${target}»`); }
+  else if (ships.includes(target)) { geo = 0.9; reasons.push(`возит в «${target}»`); }
+  else if (ships.includes("Россия")) { geo = 0.75; reasons.push("доставка по России"); }
+  else { reasons.push(`нет подтверждённой доставки в «${target}»`); }
+
+  const lead = num(offer.leadDays ?? supplier.leadDays);
+  let time = 0.6;
+  if (lead === null) reasons.push("срок поставки не указан");
+  else if (!query.leadDaysMax) { time = 1; reasons.push(`срок ${lead} дн.`); }
+  else if (lead <= query.leadDaysMax) { time = 1; reasons.push(`срок ${lead} дн. — в норматив`); }
+  else { time = Math.max(0, 1 - (lead - query.leadDaysMax) / (query.leadDaysMax * 2 || 1)); reasons.push(`срок ${lead} дн. — дольше норматива`); }
+
+  return { score: 0.6 * geo + 0.4 * time, reasons };
+}
+
+/** Надёжность: проверки, возраст, рейтинг, полнота и свежесть данных. */
+function scoreTrust(supplier, offer, now = Date.now()) {
+  const reasons = [];
+  let s = 0;
+
+  const innOk = validInn(supplier.inn);
+  if (innOk) { s += 0.25; reasons.push("ИНН проходит проверку"); }
+  else reasons.push("ИНН не указан или не проходит проверку");
+
+  if (supplier.verified?.egrul) { s += 0.15; reasons.push("сверен с ЕГРЮЛ"); }
+  if (supplier.verified?.contract) { s += 0.1; reasons.push("работали по договору"); }
+
+  const years = num(supplier.yearsOnMarket);
+  if (years !== null) {
+    const y = Math.min(1, years / 10);
+    s += 0.15 * y;
+    reasons.push(`на рынке ${years} ${years === 1 ? "год" : years < 5 ? "года" : "лет"}`);
+  }
+
+  const rating = num(supplier.rating);
+  if (rating !== null) { s += 0.15 * Math.min(1, rating / 5); reasons.push(`рейтинг ${rating}/5`); }
+
+  const fields = ["inn", "phone", "email", "site", "region", "legalName"];
+  const filled = fields.filter((f) => supplier[f]).length / fields.length;
+  s += 0.1 * filled;
+
+  const upd = offer.updatedAt ? Date.parse(offer.updatedAt) : NaN;
+  if (Number.isFinite(upd)) {
+    const days = (now - upd) / 86400000;
+    const fresh = days <= 30 ? 1 : days <= 90 ? 0.6 : 0.2;
+    s += 0.1 * fresh;
+    if (days > 90) reasons.push(`цена обновлялась ${Math.round(days)} дн. назад`);
+  } else {
+    reasons.push("дата цены неизвестна");
+  }
+
+  return { score: Math.min(1, s), reasons };
+}
+
+/* ------------------------------------------------------------------ */
+/* Подбор                                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Когорта товара — «одно и то же изделие у разных поставщиков».
+ * Ключ намеренно грубый: категория + нормализованное имя. Артикулы у
+ * поставщиков свои, а имя после нормализации совпадает достаточно часто,
+ * чтобы сравнение цен было честным.
+ */
+function cohortKey(offer) {
+  return `${norm(offer.category)}|${norm(offer.name)}`;
+}
+
+function hardFilter(query, supplier, offer, qtyOffer) {
+  if (supplier.status === "blocked") return "поставщик заблокирован";
+  if (query.category && offer.category && norm(query.category) !== norm(offer.category)) return "другая категория";
+  if (query.supplierTypes?.length && !query.supplierTypes.includes(supplier.type)) return `тип «${supplier.type}» не выбран`;
+  if (query.requireVerified && !validInn(supplier.inn)) return "не прошёл проверку ИНН";
+  if (query.paymentTerms?.length) {
+    const have = supplier.paymentTerms ?? [];
+    if (!query.paymentTerms.some((t) => have.includes(t))) return "не даёт нужных условий оплаты";
+  }
+  if (query.qty) {
+    if (qtyOffer === null) return "единицы измерения несопоставимы";
+    const moq = num(offer.moq);
+    if (moq !== null && qtyOffer < moq) return `минимальная партия ${moq} ${offer.unit}`;
+  }
+  const requiredAttrs = query.requiredAttrs ?? {};
+  for (const [k, v] of Object.entries(requiredAttrs)) {
+    if (v === "" || v == null) continue;
+    const have = offer.attrs?.[k];
+    const values = Array.isArray(v) ? v : [v];
+    if (have == null || !values.some((x) => norm(x) === norm(have))) return `не совпал обязательный параметр «${k}»`;
+  }
+  return null;
+}
+
+/**
+ * Главная функция. Возвращает { results, excluded, weights }.
+ * results отсортированы по убыванию score; у каждого — лучшее предложение,
+ * разбор по осям и человекочитаемые причины.
+ */
+function search(query, { suppliers, offers }, opts = {}) {
+  const now = opts.now ?? Date.now();
+  const mode = query.mode === "b2c" ? "b2c" : "b2b";
+  const weights = { ...DEFAULT_WEIGHTS[mode], ...(query.weights ?? {}) };
+  const byId = new Map(suppliers.map((s) => [s.id, s]));
+  const qty = num(query.qty) ?? 1;
+
+  const excluded = [];
+  const candidates = [];
+
+  for (const offer of offers) {
+    const supplier = byId.get(offer.supplierId);
+    if (!supplier) { excluded.push({ offerId: offer.id, supplierId: offer.supplierId, name: "—", reason: "поставщик не найден" }); continue; }
+
+    // Сначала релевантность, потом жёсткие фильтры: иначе в списке отсева
+    // кабель соседствует с перчатками под причиной «единицы несопоставимы»,
+    // и понять, кого и почему выбросили, невозможно.
+    const product = scoreProduct(query, offer);
+    if (query.text && product.score < (query.minProductScore ?? 0.45)) {
+      excluded.push({ offerId: offer.id, supplierId: supplier.id, name: supplier.name, reason: "слабое соответствие запросу" });
+      continue;
+    }
+
+    const qtyOffer = query.qty ? qtyInOfferUnit(qty, query.unit ?? offer.unit, offer.unit) : qty;
+    const reason = hardFilter(query, supplier, offer, qtyOffer);
+    if (reason) { excluded.push({ offerId: offer.id, supplierId: supplier.id, name: supplier.name, reason }); continue; }
+
+    const unitPrice = effectiveUnitPrice(offer, qtyOffer ?? qty);
+    candidates.push({ offer, supplier, qtyOffer, unitPrice, product, cohort: cohortKey(offer) });
+  }
+
+  // База сравнения цены — внутри когорты одинакового товара.
+  // Сравнивать цену кабеля 3х1,5 с кабелем 3х2,5 бессмысленно: дешёвый
+  // «не тот» товар получал бы максимум по цене и вытеснял точное совпадение.
+  const cohortBest = new Map();
+  for (const c of candidates) {
+    if (c.unitPrice === null || c.unitPrice <= 0) continue;
+    const cur = cohortBest.get(c.cohort);
+    if (cur === undefined || c.unitPrice < cur) cohortBest.set(c.cohort, c.unitPrice);
+  }
+  const catBest = new Map();
+  for (const c of candidates) {
+    if (c.unitPrice === null || c.unitPrice <= 0) continue;
+    const k = norm(c.offer.category);
+    const cur = catBest.get(k);
+    if (cur === undefined || c.unitPrice < cur) catBest.set(k, cur === undefined ? c.unitPrice : Math.min(cur, c.unitPrice));
+  }
+  const cohortSize = new Map();
+  for (const c of candidates) cohortSize.set(c.cohort, (cohortSize.get(c.cohort) ?? 0) + 1);
+  const baselineFor = (c) =>
+    (cohortSize.get(c.cohort) ?? 0) >= 2 ? cohortBest.get(c.cohort) ?? null : catBest.get(norm(c.offer.category)) ?? c.unitPrice;
+
+  const prices = candidates.map((c) => c.unitPrice).filter((p) => p !== null && p > 0);
+  const bestUnitPrice = prices.length ? Math.min(...prices) : null;
+
+  const scored = candidates.map((c) => {
+    const price = scorePrice(c.unitPrice, baselineFor(c), num(query.budgetPerUnit));
+    const logistics = scoreLogistics(query, c.supplier, c.offer);
+    const trust = scoreTrust(c.supplier, c.offer, now);
+    const breakdown = { product: c.product.score, price: price.score, logistics: logistics.score, trust: trust.score };
+    const score =
+      weights.product * breakdown.product +
+      weights.price * breakdown.price +
+      weights.logistics * breakdown.logistics +
+      weights.trust * breakdown.trust;
+    return {
+      supplier: c.supplier,
+      offer: c.offer,
+      qty: c.qtyOffer,
+      unitPrice: c.unitPrice,
+      total: c.unitPrice !== null && c.qtyOffer !== null ? Math.round(c.unitPrice * c.qtyOffer * 100) / 100 : null,
+      score: Math.round(score * 1000) / 1000,
+      breakdown,
+      reasons: {
+        product: c.product.reasons,
+        price: price.reasons,
+        logistics: logistics.reasons,
+        trust: trust.reasons,
+      },
+    };
+  });
+
+  // По одному поставщику в выдаче: лучшее предложение наверх, остальные —
+  // в alternatives, чтобы список читался как список поставщиков, а не прайс.
+  const bySupplier = new Map();
+  for (const r of scored.sort((a, b) => b.score - a.score)) {
+    const cur = bySupplier.get(r.supplier.id);
+    if (!cur) bySupplier.set(r.supplier.id, { ...r, alternatives: [] });
+    else cur.alternatives.push({ offer: r.offer, unitPrice: r.unitPrice, score: r.score });
+  }
+
+  const results = [...bySupplier.values()].sort((a, b) => b.score - a.score);
+  const limit = num(query.limit) ?? 50;
+  return { results: results.slice(0, limit), excluded, weights, bestUnitPrice, mode };
+}
+
+const DATA = {"suppliers":[{"id":"stroypostavka","name":"АО «Стройпоставка»","legalName":"АО «Стройпоставка»","inn":"8984685010","type":"импортёр","region":"Москва","shipsTo":["Россия"],"categories":["Спецодежда и СИЗ"],"yearsOnMarket":21,"rating":4.8,"minOrderRub":25000,"leadDays":4,"paymentTerms":["наличные","предоплата"],"certifications":["СанПиН","ТР ТС","пожарный сертификат"],"phone":"+7 982 860-71-44","email":"sales@stroypostavka.ru","site":"https://stroypostavka.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"promresurs","name":"ООО ТД «ПромРесурс»","legalName":"ООО ТД «ПромРесурс»","inn":"6841156945","type":"дистрибьютор","region":"Краснодарский край","shipsTo":["Россия"],"categories":["Кабель и провод"],"yearsOnMarket":10,"rating":3.1,"minOrderRub":0,"leadDays":18,"paymentTerms":["отсрочка 30","наличные","отсрочка 14"],"certifications":["ТР ТС"],"phone":"+7 953 337-46-11","email":"sales@promresurs.ru","site":"https://promresurs.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"tehnolayn","name":"ИП «ТехноЛайн»","legalName":"ИП «ТехноЛайн»","inn":"2750879756","type":"производитель","region":"Нижегородская область","shipsTo":["Россия"],"categories":["Крепёж"],"yearsOnMarket":22,"rating":4.2,"minOrderRub":50000,"leadDays":2,"paymentTerms":["отсрочка 14","наличные"],"certifications":["ГОСТ Р","СанПиН","пожарный сертификат"],"phone":"+7 903 466-63-16","email":"sales@tehnolayn.ru","site":"https://tehnolayn.ru","verified":{"inn":true,"egrul":false,"contract":false},"status":"active","source":"demo"},{"id":"severtorg","name":"АО «Северторг»","legalName":"АО «Северторг»","inn":"3757628979","type":"трейдер","region":"Ленинградская область","shipsTo":["Россия"],"categories":["Упаковка","Кабель и провод"],"yearsOnMarket":4,"rating":4.2,"minOrderRub":25000,"leadDays":15,"paymentTerms":["отсрочка 14"],"certifications":["пожарный сертификат"],"phone":"+7 949 614-93-23","email":"sales@severtorg.ru","site":"https://severtorg.ru","verified":{"inn":true,"egrul":false,"contract":true},"status":"active","source":"demo"},{"id":"megasnab","name":"ООО ТД «Мегаснаб»","legalName":"ООО ТД «Мегаснаб»","inn":"9669327500","type":"производитель","region":"Нижегородская область","shipsTo":["Московская область","Краснодарский край","Свердловская область","Москва","Нижегородская область"],"categories":["Упаковка","Крепёж"],"yearsOnMarket":12,"rating":3.5,"minOrderRub":10000,"leadDays":1,"paymentTerms":["отсрочка 30"],"certifications":["СанПиН","ГОСТ Р","пожарный сертификат"],"phone":"+7 959 242-56-28","email":"sales@megasnab.ru","site":"https://megasnab.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"uralkomplekt","name":"ИП «Уралкомплект»","legalName":"ИП «Уралкомплект»","inn":"3935107183","type":"трейдер","region":"Ленинградская область","shipsTo":["Россия"],"categories":["Спецодежда и СИЗ"],"yearsOnMarket":15,"rating":3.8,"minOrderRub":10000,"leadDays":2,"paymentTerms":["наличные"],"certifications":["СанПиН","пожарный сертификат"],"phone":"+7 906 978-74-89","email":"sales@uralkomplekt.ru","site":"https://uralkomplekt.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"volgatreyd","name":"ООО «ВолгаТрейд»","legalName":"ООО «ВолгаТрейд»","inn":"3526351261","type":"дистрибьютор","region":"Татарстан","shipsTo":["Россия"],"categories":["Кабель и провод"],"yearsOnMarket":4,"rating":4.4,"minOrderRub":100000,"leadDays":13,"paymentTerms":["предоплата","наличные"],"certifications":[],"phone":"+7 911 755-21-72","email":"sales@volgatreyd.ru","site":"https://volgatreyd.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"sibirprom","name":"ООО ТД «СибирьПром»","legalName":"ООО ТД «СибирьПром»","inn":"2655813145","type":"дистрибьютор","region":"Свердловская область","shipsTo":["Россия"],"categories":["Крепёж"],"yearsOnMarket":12,"rating":4.5,"minOrderRub":25000,"leadDays":12,"paymentTerms":["предоплата","аккредитив"],"certifications":["ГОСТ Р"],"phone":"+7 992 666-57-12","email":"sales@sibirprom.ru","site":"https://sibirprom.ru","verified":{"inn":true,"egrul":false,"contract":false},"status":"active","source":"demo"},{"id":"baltiksnab","name":"АО «БалтикСнаб»","legalName":"АО «БалтикСнаб»","inn":"7349266326","type":"дистрибьютор","region":"Свердловская область","shipsTo":["Россия"],"categories":["Крепёж"],"yearsOnMarket":21,"rating":4.4,"minOrderRub":100000,"leadDays":15,"paymentTerms":["наличные"],"certifications":["ТР ТС","ГОСТ Р","СанПиН"],"phone":"+7 980 135-85-35","email":"sales@baltiksnab.ru","site":"https://baltiksnab.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"profmarket","name":"ООО ТД «Профмаркет»","legalName":"ООО ТД «Профмаркет»","inn":"4119127869","type":"трейдер","region":"Новосибирская область","shipsTo":["Россия"],"categories":["Крепёж","Упаковка"],"yearsOnMarket":15,"rating":3.5,"minOrderRub":50000,"leadDays":5,"paymentTerms":["наличные","отсрочка 14","аккредитив"],"certifications":["ISO 9001","пожарный сертификат","ГОСТ Р"],"phone":"+7 995 982-45-81","email":"sales@profmarket.ru","site":"https://profmarket.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"glavpostavka","name":"ООО «ГлавПоставка»","legalName":"ООО «ГлавПоставка»","inn":"7207690071","type":"производитель","region":"Нижегородская область","shipsTo":["Свердловская область","Новосибирская область","Москва","Краснодарский край","Нижегородская область"],"categories":["Упаковка"],"yearsOnMarket":17,"rating":3.2,"minOrderRub":25000,"leadDays":17,"paymentTerms":["предоплата"],"certifications":["СанПиН","ГОСТ Р"],"phone":"+7 959 274-46-30","email":"sales@glavpostavka.ru","site":"https://glavpostavka.ru","verified":{"inn":true,"egrul":false,"contract":false},"status":"active","source":"demo"},{"id":"energosnab","name":"ООО «ЭнергоСнаб»","legalName":"ООО «ЭнергоСнаб»","inn":"4731770980","type":"трейдер","region":"Москва","shipsTo":["Россия"],"categories":["Спецодежда и СИЗ","Кабель и провод"],"yearsOnMarket":10,"rating":3.6,"minOrderRub":50000,"leadDays":3,"paymentTerms":["аккредитив","наличные"],"certifications":["ГОСТ Р","ТР ТС"],"phone":"+7 941 855-10-21","email":"sales@energosnab.ru","site":"https://energosnab.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"yugkomplekt","name":"ИП «ЮгКомплект»","legalName":"ИП «ЮгКомплект»","inn":"8666973590","type":"дистрибьютор","region":"Ленинградская область","shipsTo":["Россия"],"categories":["Спецодежда и СИЗ"],"yearsOnMarket":22,"rating":3.5,"minOrderRub":25000,"leadDays":11,"paymentTerms":["отсрочка 14","аккредитив","отсрочка 30"],"certifications":["пожарный сертификат","ISO 9001"],"phone":"+7 989 384-60-83","email":"sales@yugkomplekt.ru","site":"https://yugkomplekt.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"centrtorg","name":"ИП «ЦентрТорг»","legalName":"ИП «ЦентрТорг»","inn":null,"type":"производитель","region":"Краснодарский край","shipsTo":["Россия"],"categories":["Кабель и провод","Крепёж"],"yearsOnMarket":14,"rating":4.1,"minOrderRub":50000,"leadDays":18,"paymentTerms":["отсрочка 14","наличные","аккредитив"],"certifications":[],"phone":"+7 911 628-82-96","email":"sales@centrtorg.ru","site":"https://centrtorg.ru","verified":{"inn":false,"egrul":false,"contract":false},"status":"active","source":"demo"},{"id":"alfasnab","name":"ИП «АльфаСнаб»","legalName":"ИП «АльфаСнаб»","inn":"9760731688","type":"дистрибьютор","region":"Ленинградская область","shipsTo":["Россия"],"categories":["Упаковка"],"yearsOnMarket":7,"rating":3,"minOrderRub":25000,"leadDays":6,"paymentTerms":["наличные","аккредитив"],"certifications":[],"phone":"+7 960 615-55-89","email":"sales@alfasnab.ru","site":"https://alfasnab.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"intersnab","name":"ООО ТД «Интерснаб»","legalName":"ООО ТД «Интерснаб»","inn":"2639057212","type":"дистрибьютор","region":"Ленинградская область","shipsTo":["Россия"],"categories":["Кабель и провод"],"yearsOnMarket":22,"rating":4.1,"minOrderRub":10000,"leadDays":10,"paymentTerms":["отсрочка 14","предоплата","наличные"],"certifications":[],"phone":"+7 906 744-58-94","email":"sales@intersnab.ru","site":"https://intersnab.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"regiontorg","name":"ООО «РегионТорг»","legalName":"ООО «РегионТорг»","inn":"7796461777","type":"трейдер","region":"Татарстан","shipsTo":["Санкт-Петербург","Новосибирская область","Москва","Свердловская область","Татарстан"],"categories":["Упаковка"],"yearsOnMarket":6,"rating":3.9,"minOrderRub":25000,"leadDays":21,"paymentTerms":["отсрочка 14"],"certifications":[],"phone":"+7 995 554-28-52","email":"sales@regiontorg.ru","site":"https://regiontorg.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"optimaprom","name":"ООО ТД «ОптимаПром»","legalName":"ООО ТД «ОптимаПром»","inn":"8795174355","type":"трейдер","region":"Краснодарский край","shipsTo":["Санкт-Петербург","Татарстан","Свердловская область","Краснодарский край"],"categories":["Упаковка"],"yearsOnMarket":9,"rating":3.6,"minOrderRub":25000,"leadDays":15,"paymentTerms":["аккредитив","наличные","отсрочка 30"],"certifications":[],"phone":"+7 945 107-95-19","email":"sales@optimaprom.ru","site":"https://optimaprom.ru","verified":{"inn":true,"egrul":true,"contract":true},"status":"active","source":"demo"},{"id":"stroypostavka-2","name":"АО «Стройпоставка-2»","legalName":"АО «Стройпоставка-2»","inn":"7862282565","type":"трейдер","region":"Московская область","shipsTo":["Москва","Московская область","Нижегородская область","Московская область"],"categories":["Кабель и провод"],"yearsOnMarket":4,"rating":3.5,"minOrderRub":0,"leadDays":21,"paymentTerms":["отсрочка 30","предоплата"],"certifications":["ТР ТС","СанПиН","ГОСТ Р"],"phone":"+7 932 819-12-88","email":"sales@stroypostavka-2.ru","site":"https://stroypostavka-2.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"promresurs-2","name":"ООО «ПромРесурс-2»","legalName":"ООО «ПромРесурс-2»","inn":"9007546170","type":"производитель","region":"Новосибирская область","shipsTo":["Татарстан","Ленинградская область","Санкт-Петербург","Новосибирская область","Новосибирская область"],"categories":["Упаковка"],"yearsOnMarket":1,"rating":4.4,"minOrderRub":10000,"leadDays":13,"paymentTerms":["аккредитив"],"certifications":["СанПиН","ISO 9001","ТР ТС"],"phone":"+7 938 534-90-14","email":"sales@promresurs-2.ru","site":"https://promresurs-2.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"tehnolayn-2","name":"ООО ТД «ТехноЛайн-2»","legalName":"ООО ТД «ТехноЛайн-2»","inn":"2558682200","type":"производитель","region":"Татарстан","shipsTo":["Московская область","Свердловская область","Санкт-Петербург","Москва","Татарстан"],"categories":["Спецодежда и СИЗ","Упаковка"],"yearsOnMarket":17,"rating":4.8,"minOrderRub":10000,"leadDays":17,"paymentTerms":["аккредитив","отсрочка 14"],"certifications":["ТР ТС","СанПиН"],"phone":"+7 906 762-67-72","email":"sales@tehnolayn-2.ru","site":"https://tehnolayn-2.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"},{"id":"severtorg-2","name":"ООО ТД «Северторг-2»","legalName":"ООО ТД «Северторг-2»","inn":"0256474754","type":"трейдер","region":"Москва","shipsTo":["Санкт-Петербург","Свердловская область","Москва"],"categories":["Кабель и провод","Упаковка"],"yearsOnMarket":3,"rating":4.2,"minOrderRub":10000,"leadDays":9,"paymentTerms":["отсрочка 30"],"certifications":["ISO 9001","ГОСТ Р","ТР ТС"],"phone":"+7 935 810-67-74","email":"sales@severtorg-2.ru","site":"https://severtorg-2.ru","verified":{"inn":true,"egrul":true,"contract":true},"status":"active","source":"demo"},{"id":"megasnab-2","name":"ООО «Мегаснаб-2»","legalName":"ООО «Мегаснаб-2»","inn":"9388803987","type":"трейдер","region":"Новосибирская область","shipsTo":["Россия"],"categories":["Кабель и провод"],"yearsOnMarket":14,"rating":3.2,"minOrderRub":100000,"leadDays":14,"paymentTerms":["отсрочка 14"],"certifications":["ГОСТ Р"],"phone":"+7 917 143-54-41","email":"sales@megasnab-2.ru","site":"https://megasnab-2.ru","verified":{"inn":true,"egrul":false,"contract":true},"status":"active","source":"demo"},{"id":"uralkomplekt-2","name":"ИП «Уралкомплект-2»","legalName":"ИП «Уралкомплект-2»","inn":"8704285710","type":"импортёр","region":"Краснодарский край","shipsTo":["Россия"],"categories":["Крепёж"],"yearsOnMarket":1,"rating":3.2,"minOrderRub":50000,"leadDays":18,"paymentTerms":["отсрочка 30","отсрочка 14","наличные"],"certifications":[],"phone":"+7 953 965-49-69","email":"sales@uralkomplekt-2.ru","site":"https://uralkomplekt-2.ru","verified":{"inn":true,"egrul":true,"contract":false},"status":"active","source":"demo"}],"offers":[{"id":"o1","supplierId":"stroypostavka","name":"Ботинки кожаные с МП","brand":"Восток-Сервис","category":"Спецодежда и СИЗ","attrs":{"размер":"43","подносок":"металл","класс":"200 Дж"},"unit":"pcs","price":2615.44,"currency":"RUB","priceTiers":[{"minQty":50,"price":2458.51},{"minQty":200,"price":2275.43}],"moq":10,"packSize":10,"stock":"уточняется","leadDays":5,"updatedAt":"2026-07-13","source":"demo"},{"id":"o2","supplierId":"stroypostavka","name":"Костюм рабочий летний","brand":"Техноавиа","category":"Спецодежда и СИЗ","attrs":{"размер":"52-54","ткань":"смесовая 65/35","класс":"1 класс защиты"},"unit":"pcs","price":1945.23,"currency":"RUB","priceTiers":[],"moq":50,"packSize":100,"stock":"уточняется","leadDays":3,"updatedAt":"2026-09-11","source":"demo"},{"id":"o3","supplierId":"stroypostavka","name":"Каска защитная","brand":"Техноавиа","category":"Спецодежда и СИЗ","attrs":{"размер":"универсальный","материал":"ABS","класс":"ГОСТ 12.4.207"},"unit":"pcs","price":663.37,"currency":"RUB","priceTiers":[],"moq":100,"packSize":100,"stock":"в наличии","leadDays":11,"updatedAt":"2026-07-28","source":"demo"},{"id":"o4","supplierId":"stroypostavka","name":"Перчатки нитриловые (пара)","brand":"Техноавиа","category":"Спецодежда и СИЗ","attrs":{"размер":"10","материал":"нитрил","класс":"МБС"},"unit":"pcs","price":84.73,"currency":"RUB","priceTiers":[],"moq":100,"packSize":10,"stock":"в наличии","leadDays":3,"updatedAt":"2026-06-06","source":"demo"},{"id":"o5","supplierId":"promresurs","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":80.94,"currency":"RUB","priceTiers":[{"minQty":250,"price":76.08},{"minQty":1000,"price":70.42}],"moq":50,"packSize":1,"stock":"уточняется","leadDays":25,"updatedAt":"2026-07-22","source":"demo"},{"id":"o6","supplierId":"promresurs","name":"Кабель АВБбШв 4х16","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":126.85,"currency":"RUB","priceTiers":[{"minQty":2500,"price":119.24},{"minQty":10000,"price":110.36}],"moq":500,"packSize":10,"stock":"уточняется","leadDays":25,"updatedAt":"2026-09-10","source":"demo"},{"id":"o7","supplierId":"promresurs","name":"Провод ПуГВ 1х4","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":39.32,"currency":"RUB","priceTiers":[{"minQty":2500,"price":36.96},{"minQty":10000,"price":34.21}],"moq":500,"packSize":1,"stock":"под заказ","leadDays":20,"updatedAt":"2026-08-01","source":"demo"},{"id":"o8","supplierId":"tehnolayn","name":"Дюбель-гвоздь 6х40","brand":"Sormat","category":"Крепёж","attrs":{"материал":"нейлон","размер":"6х40","покрытие":"нет"},"unit":"pcs","price":2.07,"currency":"RUB","priceTiers":[{"minQty":2500,"price":1.95},{"minQty":10000,"price":1.8}],"moq":500,"packSize":1,"stock":"уточняется","leadDays":8,"updatedAt":"2026-06-22","source":"demo"},{"id":"o9","supplierId":"tehnolayn","name":"Анкер клиновой М10х100","brand":"Крепком","category":"Крепёж","attrs":{"материал":"сталь оцинкованная","размер":"М10х100","покрытие":"цинк"},"unit":"pcs","price":19.77,"currency":"RUB","priceTiers":[],"moq":500,"packSize":1,"stock":"в наличии","leadDays":1,"updatedAt":"2026-06-01","source":"demo"},{"id":"o10","supplierId":"severtorg","name":"Стретч-плёнка 500мм 17мкм","brand":"Картонпак","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":305.72,"currency":"RUB","priceTiers":[],"moq":1000,"packSize":100,"stock":"уточняется","leadDays":18,"updatedAt":"2026-05-14","source":"demo"},{"id":"o11","supplierId":"severtorg","name":"Скотч упаковочный 48мм х 66м","brand":"Картонпак","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":68.5,"currency":"RUB","priceTiers":[{"minQty":5000,"price":64.39},{"minQty":20000,"price":59.6}],"moq":1000,"packSize":100,"stock":"в наличии","leadDays":17,"updatedAt":"2026-05-30","source":"demo"},{"id":"o12","supplierId":"severtorg","name":"Короб гофрокартон Т-23 400х300х300","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":45.87,"currency":"RUB","priceTiers":[],"moq":50,"packSize":100,"stock":"уточняется","leadDays":14,"updatedAt":"2026-08-23","source":"demo"},{"id":"o13","supplierId":"severtorg","name":"Паллет деревянный EUR 1200х800","brand":"Картонпак","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":625.95,"currency":"RUB","priceTiers":[],"moq":10,"packSize":10,"stock":"в наличии","leadDays":13,"updatedAt":"2026-05-22","source":"demo"},{"id":"o14","supplierId":"severtorg","name":"Кабель ВВГнг(А)-LS 5х6","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"5х6","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":289.26,"currency":"RUB","priceTiers":[{"minQty":500,"price":271.9},{"minQty":2000,"price":251.66}],"moq":100,"packSize":1,"stock":"уточняется","leadDays":14,"updatedAt":"2026-08-12","source":"demo"},{"id":"o15","supplierId":"severtorg","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":69.67,"currency":"RUB","priceTiers":[{"minQty":500,"price":65.49},{"minQty":2000,"price":60.61}],"moq":100,"packSize":1,"stock":"уточняется","leadDays":16,"updatedAt":"2026-05-08","source":"demo"},{"id":"o16","supplierId":"severtorg","name":"Провод ПуГВ 1х4","brand":"Севкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":42.3,"currency":"RUB","priceTiers":[{"minQty":250,"price":39.76},{"minQty":1000,"price":36.8}],"moq":50,"packSize":1,"stock":"в наличии","leadDays":21,"updatedAt":"2026-06-08","source":"demo"},{"id":"o17","supplierId":"severtorg","name":"Кабель АВБбШв 4х16","brand":"Севкабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":133.61,"currency":"RUB","priceTiers":[],"moq":50,"packSize":100,"stock":"в наличии","leadDays":16,"updatedAt":"2026-05-22","source":"demo"},{"id":"o18","supplierId":"severtorg","name":"Кабель ВВГнг(А)-LS 3х1,5","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х1,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":61.52,"currency":"RUB","priceTiers":[{"minQty":2500,"price":57.83},{"minQty":10000,"price":53.52}],"moq":500,"packSize":1,"stock":"в наличии","leadDays":17,"updatedAt":"2026-07-14","source":"demo"},{"id":"o19","supplierId":"megasnab","name":"Короб гофрокартон Т-23 400х300х300","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":44.86,"currency":"RUB","priceTiers":[{"minQty":5000,"price":42.17},{"minQty":20000,"price":39.03}],"moq":1000,"packSize":10,"stock":"в наличии","leadDays":4,"updatedAt":"2026-08-05","source":"demo"},{"id":"o20","supplierId":"megasnab","name":"Паллет деревянный EUR 1200х800","brand":"Готэк","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":661.48,"currency":"RUB","priceTiers":[{"minQty":5000,"price":621.79},{"minQty":20000,"price":575.49}],"moq":1000,"packSize":100,"stock":"уточняется","leadDays":4,"updatedAt":"2026-07-27","source":"demo"},{"id":"o21","supplierId":"megasnab","name":"Скотч упаковочный 48мм х 66м","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":72.63,"currency":"RUB","priceTiers":[],"moq":10,"packSize":100,"stock":"уточняется","leadDays":5,"updatedAt":"2026-05-23","source":"demo"},{"id":"o22","supplierId":"megasnab","name":"Стретч-плёнка 500мм 17мкм","brand":"Готэк","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":226.94,"currency":"RUB","priceTiers":[],"moq":500,"packSize":100,"stock":"в наличии","leadDays":6,"updatedAt":"2026-08-23","source":"demo"},{"id":"o23","supplierId":"megasnab","name":"Саморез по дереву 4,2х75","brand":"Метизстандарт","category":"Крепёж","attrs":{"материал":"сталь","размер":"4,2х75","покрытие":"фосфат"},"unit":"pcs","price":1.16,"currency":"RUB","priceTiers":[],"moq":100,"packSize":10,"stock":"уточняется","leadDays":1,"updatedAt":"2026-06-03","source":"demo"},{"id":"o24","supplierId":"megasnab","name":"Анкер клиновой М10х100","brand":"Sormat","category":"Крепёж","attrs":{"материал":"сталь оцинкованная","размер":"М10х100","покрытие":"цинк"},"unit":"pcs","price":23.07,"currency":"RUB","priceTiers":[],"moq":50,"packSize":1,"stock":"уточняется","leadDays":6,"updatedAt":"2026-05-07","source":"demo"},{"id":"o25","supplierId":"megasnab","name":"Болт М12х60 DIN 933","brand":"Fischer","category":"Крепёж","attrs":{"материал":"сталь 8.8","размер":"М12х60","покрытие":"цинк"},"unit":"pcs","price":10.97,"currency":"RUB","priceTiers":[],"moq":500,"packSize":100,"stock":"под заказ","leadDays":3,"updatedAt":"2026-07-24","source":"demo"},{"id":"o26","supplierId":"uralkomplekt","name":"Каска защитная","brand":"Ампаро","category":"Спецодежда и СИЗ","attrs":{"размер":"универсальный","материал":"ABS","класс":"ГОСТ 12.4.207"},"unit":"pcs","price":582.68,"currency":"RUB","priceTiers":[{"minQty":500,"price":547.72},{"minQty":2000,"price":506.93}],"moq":100,"packSize":100,"stock":"уточняется","leadDays":2,"updatedAt":"2026-08-16","source":"demo"},{"id":"o27","supplierId":"uralkomplekt","name":"Перчатки нитриловые (пара)","brand":"Delta Plus","category":"Спецодежда и СИЗ","attrs":{"размер":"10","материал":"нитрил","класс":"МБС"},"unit":"pcs","price":42.98,"currency":"RUB","priceTiers":[{"minQty":500,"price":40.4},{"minQty":2000,"price":37.39}],"moq":100,"packSize":10,"stock":"под заказ","leadDays":7,"updatedAt":"2026-05-16","source":"demo"},{"id":"o28","supplierId":"uralkomplekt","name":"Ботинки кожаные с МП","brand":"Техноавиа","category":"Спецодежда и СИЗ","attrs":{"размер":"43","подносок":"металл","класс":"200 Дж"},"unit":"pcs","price":4181.23,"currency":"RUB","priceTiers":[{"minQty":2500,"price":3930.36},{"minQty":10000,"price":3637.67}],"moq":500,"packSize":100,"stock":"под заказ","leadDays":2,"updatedAt":"2026-05-31","source":"demo"},{"id":"o29","supplierId":"volgatreyd","name":"Кабель АВБбШв 4х16","brand":"Севкабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":135.13,"currency":"RUB","priceTiers":[{"minQty":500,"price":127.02},{"minQty":2000,"price":117.56}],"moq":100,"packSize":1,"stock":"в наличии","leadDays":18,"updatedAt":"2026-07-12","source":"demo"},{"id":"o30","supplierId":"volgatreyd","name":"Кабель ВВГнг(А)-LS 5х6","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"5х6","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":310.32,"currency":"RUB","priceTiers":[{"minQty":2500,"price":291.7},{"minQty":10000,"price":269.98}],"moq":500,"packSize":10,"stock":"уточняется","leadDays":20,"updatedAt":"2026-07-31","source":"demo"},{"id":"o31","supplierId":"volgatreyd","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":73.91,"currency":"RUB","priceTiers":[],"moq":200,"packSize":100,"stock":"в наличии","leadDays":18,"updatedAt":"2026-08-29","source":"demo"},{"id":"o32","supplierId":"volgatreyd","name":"Провод ПуГВ 1х4","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":39.93,"currency":"RUB","priceTiers":[{"minQty":250,"price":37.53},{"minQty":1000,"price":34.74}],"moq":50,"packSize":100,"stock":"под заказ","leadDays":15,"updatedAt":"2026-06-16","source":"demo"},{"id":"o33","supplierId":"volgatreyd","name":"Кабель ВВГнг(А)-LS 3х1,5","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х1,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":50.18,"currency":"RUB","priceTiers":[],"moq":50,"packSize":100,"stock":"уточняется","leadDays":18,"updatedAt":"2026-05-07","source":"demo"},{"id":"o34","supplierId":"sibirprom","name":"Болт М12х60 DIN 933","brand":"Fischer","category":"Крепёж","attrs":{"материал":"сталь 8.8","размер":"М12х60","покрытие":"цинк"},"unit":"pcs","price":8.59,"currency":"RUB","priceTiers":[{"minQty":500,"price":8.07},{"minQty":2000,"price":7.47}],"moq":100,"packSize":10,"stock":"в наличии","leadDays":16,"updatedAt":"2026-07-29","source":"demo"},{"id":"o35","supplierId":"sibirprom","name":"Дюбель-гвоздь 6х40","brand":"Sormat","category":"Крепёж","attrs":{"материал":"нейлон","размер":"6х40","покрытие":"нет"},"unit":"pcs","price":2.01,"currency":"RUB","priceTiers":[{"minQty":500,"price":1.89},{"minQty":2000,"price":1.75}],"moq":100,"packSize":100,"stock":"уточняется","leadDays":16,"updatedAt":"2026-05-23","source":"demo"},{"id":"o36","supplierId":"baltiksnab","name":"Болт М12х60 DIN 933","brand":"Крепком","category":"Крепёж","attrs":{"материал":"сталь 8.8","размер":"М12х60","покрытие":"цинк"},"unit":"pcs","price":8.75,"currency":"RUB","priceTiers":[{"minQty":250,"price":8.23},{"minQty":1000,"price":7.61}],"moq":50,"packSize":10,"stock":"в наличии","leadDays":20,"updatedAt":"2026-05-01","source":"demo"},{"id":"o37","supplierId":"baltiksnab","name":"Дюбель-гвоздь 6х40","brand":"Fischer","category":"Крепёж","attrs":{"материал":"нейлон","размер":"6х40","покрытие":"нет"},"unit":"pcs","price":0.95,"currency":"RUB","priceTiers":[{"minQty":5000,"price":0.89},{"minQty":20000,"price":0.83}],"moq":1000,"packSize":100,"stock":"под заказ","leadDays":17,"updatedAt":"2026-06-08","source":"demo"},{"id":"o38","supplierId":"baltiksnab","name":"Анкер клиновой М10х100","brand":"Метизстандарт","category":"Крепёж","attrs":{"материал":"сталь оцинкованная","размер":"М10х100","покрытие":"цинк"},"unit":"pcs","price":18.25,"currency":"RUB","priceTiers":[],"moq":50,"packSize":1,"stock":"уточняется","leadDays":13,"updatedAt":"2026-07-28","source":"demo"},{"id":"o39","supplierId":"baltiksnab","name":"Саморез по дереву 4,2х75","brand":"Sormat","category":"Крепёж","attrs":{"материал":"сталь","размер":"4,2х75","покрытие":"фосфат"},"unit":"pcs","price":2.05,"currency":"RUB","priceTiers":[{"minQty":50,"price":1.93},{"minQty":200,"price":1.78}],"moq":10,"packSize":1,"stock":"уточняется","leadDays":12,"updatedAt":"2026-05-20","source":"demo"},{"id":"o40","supplierId":"profmarket","name":"Дюбель-гвоздь 6х40","brand":"Крепком","category":"Крепёж","attrs":{"материал":"нейлон","размер":"6х40","покрытие":"нет"},"unit":"pcs","price":1.07,"currency":"RUB","priceTiers":[],"moq":100,"packSize":10,"stock":"в наличии","leadDays":8,"updatedAt":"2026-06-22","source":"demo"},{"id":"o41","supplierId":"profmarket","name":"Болт М12х60 DIN 933","brand":"Метизстандарт","category":"Крепёж","attrs":{"материал":"сталь 8.8","размер":"М12х60","покрытие":"цинк"},"unit":"pcs","price":16.54,"currency":"RUB","priceTiers":[],"moq":500,"packSize":100,"stock":"под заказ","leadDays":12,"updatedAt":"2026-08-25","source":"demo"},{"id":"o42","supplierId":"profmarket","name":"Стретч-плёнка 500мм 17мкм","brand":"Готэк","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":259.98,"currency":"RUB","priceTiers":[],"moq":10,"packSize":1,"stock":"под заказ","leadDays":8,"updatedAt":"2026-05-04","source":"demo"},{"id":"o43","supplierId":"profmarket","name":"Паллет деревянный EUR 1200х800","brand":"Картонпак","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":521.03,"currency":"RUB","priceTiers":[{"minQty":5000,"price":489.77},{"minQty":20000,"price":453.3}],"moq":1000,"packSize":1,"stock":"в наличии","leadDays":3,"updatedAt":"2026-08-03","source":"demo"},{"id":"o44","supplierId":"glavpostavka","name":"Стретч-плёнка 500мм 17мкм","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":314.55,"currency":"RUB","priceTiers":[{"minQty":2500,"price":295.68},{"minQty":10000,"price":273.66}],"moq":500,"packSize":10,"stock":"под заказ","leadDays":20,"updatedAt":"2026-09-10","source":"demo"},{"id":"o45","supplierId":"glavpostavka","name":"Паллет деревянный EUR 1200х800","brand":"Готэк","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":812.78,"currency":"RUB","priceTiers":[],"moq":50,"packSize":1,"stock":"под заказ","leadDays":16,"updatedAt":"2026-05-02","source":"demo"},{"id":"o46","supplierId":"glavpostavka","name":"Короб гофрокартон Т-23 400х300х300","brand":"Картонпак","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":43.09,"currency":"RUB","priceTiers":[{"minQty":500,"price":40.5},{"minQty":2000,"price":37.49}],"moq":100,"packSize":1,"stock":"под заказ","leadDays":23,"updatedAt":"2026-05-04","source":"demo"},{"id":"o47","supplierId":"glavpostavka","name":"Скотч упаковочный 48мм х 66м","brand":"СФТ Пакеджинг","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":58.53,"currency":"RUB","priceTiers":[{"minQty":250,"price":55.02},{"minQty":1000,"price":50.92}],"moq":50,"packSize":100,"stock":"в наличии","leadDays":20,"updatedAt":"2026-07-12","source":"demo"},{"id":"o48","supplierId":"energosnab","name":"Костюм рабочий летний","brand":"Восток-Сервис","category":"Спецодежда и СИЗ","attrs":{"размер":"52-54","ткань":"смесовая 65/35","класс":"1 класс защиты"},"unit":"pcs","price":2067,"currency":"RUB","priceTiers":[],"moq":500,"packSize":10,"stock":"уточняется","leadDays":1,"updatedAt":"2026-09-05","source":"demo"},{"id":"o49","supplierId":"energosnab","name":"Каска защитная","brand":"Delta Plus","category":"Спецодежда и СИЗ","attrs":{"размер":"универсальный","материал":"ABS","класс":"ГОСТ 12.4.207"},"unit":"pcs","price":581.2,"currency":"RUB","priceTiers":[{"minQty":500,"price":546.33},{"minQty":2000,"price":505.64}],"moq":100,"packSize":100,"stock":"уточняется","leadDays":1,"updatedAt":"2026-08-06","source":"demo"},{"id":"o50","supplierId":"energosnab","name":"Ботинки кожаные с МП","brand":"Восток-Сервис","category":"Спецодежда и СИЗ","attrs":{"размер":"43","подносок":"металл","класс":"200 Дж"},"unit":"pcs","price":3714.29,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"уточняется","leadDays":2,"updatedAt":"2026-05-10","source":"demo"},{"id":"o51","supplierId":"energosnab","name":"Кабель АВБбШв 4х16","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":118.51,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"уточняется","leadDays":6,"updatedAt":"2026-07-28","source":"demo"},{"id":"o52","supplierId":"energosnab","name":"Кабель ВВГнг(А)-LS 5х6","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"5х6","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":302.67,"currency":"RUB","priceTiers":[],"moq":200,"packSize":100,"stock":"в наличии","leadDays":10,"updatedAt":"2026-07-13","source":"demo"},{"id":"o53","supplierId":"yugkomplekt","name":"Костюм рабочий летний","brand":"Техноавиа","category":"Спецодежда и СИЗ","attrs":{"размер":"52-54","ткань":"смесовая 65/35","класс":"1 класс защиты"},"unit":"pcs","price":3191.72,"currency":"RUB","priceTiers":[],"moq":50,"packSize":1,"stock":"в наличии","leadDays":12,"updatedAt":"2026-07-30","source":"demo"},{"id":"o54","supplierId":"yugkomplekt","name":"Ботинки кожаные с МП","brand":"Ампаро","category":"Спецодежда и СИЗ","attrs":{"размер":"43","подносок":"металл","класс":"200 Дж"},"unit":"pcs","price":3809.87,"currency":"RUB","priceTiers":[],"moq":10,"packSize":10,"stock":"в наличии","leadDays":12,"updatedAt":"2026-06-08","source":"demo"},{"id":"o55","supplierId":"yugkomplekt","name":"Перчатки нитриловые (пара)","brand":"Delta Plus","category":"Спецодежда и СИЗ","attrs":{"размер":"10","материал":"нитрил","класс":"МБС"},"unit":"pcs","price":49.94,"currency":"RUB","priceTiers":[{"minQty":50,"price":46.94},{"minQty":200,"price":43.45}],"moq":10,"packSize":10,"stock":"в наличии","leadDays":9,"updatedAt":"2026-07-05","source":"demo"},{"id":"o56","supplierId":"centrtorg","name":"Кабель ВВГнг(А)-LS 3х1,5","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х1,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":56.63,"currency":"RUB","priceTiers":[],"moq":50,"packSize":10,"stock":"уточняется","leadDays":15,"updatedAt":"2026-04-30","source":"demo"},{"id":"o57","supplierId":"centrtorg","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Севкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":84.09,"currency":"RUB","priceTiers":[{"minQty":250,"price":79.04},{"minQty":1000,"price":73.16}],"moq":50,"packSize":10,"stock":"под заказ","leadDays":20,"updatedAt":"2026-05-17","source":"demo"},{"id":"o58","supplierId":"centrtorg","name":"Провод ПуГВ 1х4","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":38.47,"currency":"RUB","priceTiers":[{"minQty":500,"price":36.16},{"minQty":2000,"price":33.47}],"moq":100,"packSize":1,"stock":"уточняется","leadDays":18,"updatedAt":"2026-06-03","source":"demo"},{"id":"o59","supplierId":"centrtorg","name":"Болт М12х60 DIN 933","brand":"Fischer","category":"Крепёж","attrs":{"материал":"сталь 8.8","размер":"М12х60","покрытие":"цинк"},"unit":"pcs","price":9.15,"currency":"RUB","priceTiers":[],"moq":50,"packSize":10,"stock":"уточняется","leadDays":19,"updatedAt":"2026-07-14","source":"demo"},{"id":"o60","supplierId":"centrtorg","name":"Анкер клиновой М10х100","brand":"Sormat","category":"Крепёж","attrs":{"материал":"сталь оцинкованная","размер":"М10х100","покрытие":"цинк"},"unit":"pcs","price":18.11,"currency":"RUB","priceTiers":[{"minQty":500,"price":17.02},{"minQty":2000,"price":15.76}],"moq":100,"packSize":100,"stock":"под заказ","leadDays":23,"updatedAt":"2026-07-07","source":"demo"},{"id":"o61","supplierId":"centrtorg","name":"Дюбель-гвоздь 6х40","brand":"Fischer","category":"Крепёж","attrs":{"материал":"нейлон","размер":"6х40","покрытие":"нет"},"unit":"pcs","price":1.74,"currency":"RUB","priceTiers":[{"minQty":250,"price":1.64},{"minQty":1000,"price":1.51}],"moq":50,"packSize":100,"stock":"в наличии","leadDays":24,"updatedAt":"2026-07-14","source":"demo"},{"id":"o62","supplierId":"centrtorg","name":"Саморез по дереву 4,2х75","brand":"Метизстандарт","category":"Крепёж","attrs":{"материал":"сталь","размер":"4,2х75","покрытие":"фосфат"},"unit":"pcs","price":1.2,"currency":"RUB","priceTiers":[{"minQty":500,"price":1.13},{"minQty":2000,"price":1.04}],"moq":100,"packSize":100,"stock":"уточняется","leadDays":21,"updatedAt":"2026-05-13","source":"demo"},{"id":"o63","supplierId":"alfasnab","name":"Скотч упаковочный 48мм х 66м","brand":"Готэк","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":44.69,"currency":"RUB","priceTiers":[{"minQty":50,"price":42.01},{"minQty":200,"price":38.88}],"moq":10,"packSize":100,"stock":"под заказ","leadDays":10,"updatedAt":"2026-06-02","source":"demo"},{"id":"o64","supplierId":"alfasnab","name":"Короб гофрокартон Т-23 400х300х300","brand":"СФТ Пакеджинг","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":31.16,"currency":"RUB","priceTiers":[],"moq":50,"packSize":100,"stock":"под заказ","leadDays":9,"updatedAt":"2026-06-28","source":"demo"},{"id":"o65","supplierId":"alfasnab","name":"Паллет деревянный EUR 1200х800","brand":"Картонпак","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":769.24,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"уточняется","leadDays":9,"updatedAt":"2026-08-21","source":"demo"},{"id":"o66","supplierId":"alfasnab","name":"Стретч-плёнка 500мм 17мкм","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":258.49,"currency":"RUB","priceTiers":[],"moq":10,"packSize":1,"stock":"уточняется","leadDays":10,"updatedAt":"2026-05-01","source":"demo"},{"id":"o67","supplierId":"intersnab","name":"Провод ПуГВ 1х4","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":34.17,"currency":"RUB","priceTiers":[],"moq":50,"packSize":100,"stock":"в наличии","leadDays":14,"updatedAt":"2026-06-15","source":"demo"},{"id":"o68","supplierId":"intersnab","name":"Кабель АВБбШв 4х16","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":141.07,"currency":"RUB","priceTiers":[{"minQty":500,"price":132.61},{"minQty":2000,"price":122.73}],"moq":100,"packSize":1,"stock":"в наличии","leadDays":15,"updatedAt":"2026-05-03","source":"demo"},{"id":"o69","supplierId":"intersnab","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":73.49,"currency":"RUB","priceTiers":[],"moq":200,"packSize":1,"stock":"в наличии","leadDays":15,"updatedAt":"2026-06-11","source":"demo"},{"id":"o70","supplierId":"regiontorg","name":"Короб гофрокартон Т-23 400х300х300","brand":"Готэк","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":33.8,"currency":"RUB","priceTiers":[{"minQty":5000,"price":31.77},{"minQty":20000,"price":29.41}],"moq":1000,"packSize":100,"stock":"под заказ","leadDays":24,"updatedAt":"2026-06-08","source":"demo"},{"id":"o71","supplierId":"regiontorg","name":"Паллет деревянный EUR 1200х800","brand":"Готэк","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":727.05,"currency":"RUB","priceTiers":[],"moq":1000,"packSize":10,"stock":"под заказ","leadDays":23,"updatedAt":"2026-04-30","source":"demo"},{"id":"o72","supplierId":"regiontorg","name":"Скотч упаковочный 48мм х 66м","brand":"Картонпак","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":65.16,"currency":"RUB","priceTiers":[{"minQty":250,"price":61.25},{"minQty":1000,"price":56.69}],"moq":50,"packSize":100,"stock":"под заказ","leadDays":23,"updatedAt":"2026-08-25","source":"demo"},{"id":"o73","supplierId":"regiontorg","name":"Стретч-плёнка 500мм 17мкм","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":232.38,"currency":"RUB","priceTiers":[{"minQty":2500,"price":218.44},{"minQty":10000,"price":202.17}],"moq":500,"packSize":10,"stock":"уточняется","leadDays":28,"updatedAt":"2026-08-21","source":"demo"},{"id":"o74","supplierId":"optimaprom","name":"Короб гофрокартон Т-23 400х300х300","brand":"Готэк","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":39.72,"currency":"RUB","priceTiers":[],"moq":50,"packSize":10,"stock":"в наличии","leadDays":17,"updatedAt":"2026-05-14","source":"demo"},{"id":"o75","supplierId":"optimaprom","name":"Скотч упаковочный 48мм х 66м","brand":"Картонпак","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":58.57,"currency":"RUB","priceTiers":[{"minQty":50,"price":55.06},{"minQty":200,"price":50.96}],"moq":10,"packSize":10,"stock":"под заказ","leadDays":18,"updatedAt":"2026-09-02","source":"demo"},{"id":"o76","supplierId":"optimaprom","name":"Паллет деревянный EUR 1200х800","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":829.58,"currency":"RUB","priceTiers":[{"minQty":500,"price":779.81},{"minQty":2000,"price":721.73}],"moq":100,"packSize":1,"stock":"уточняется","leadDays":19,"updatedAt":"2026-06-13","source":"demo"},{"id":"o77","supplierId":"stroypostavka-2","name":"Кабель АВБбШв 4х16","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":113.97,"currency":"RUB","priceTiers":[{"minQty":1000,"price":107.13},{"minQty":4000,"price":99.15}],"moq":200,"packSize":100,"stock":"под заказ","leadDays":20,"updatedAt":"2026-07-21","source":"demo"},{"id":"o78","supplierId":"stroypostavka-2","name":"Кабель ВВГнг(А)-LS 3х1,5","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х1,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":36.98,"currency":"RUB","priceTiers":[{"minQty":250,"price":34.76},{"minQty":1000,"price":32.17}],"moq":50,"packSize":10,"stock":"уточняется","leadDays":20,"updatedAt":"2026-08-19","source":"demo"},{"id":"o79","supplierId":"stroypostavka-2","name":"Провод ПуГВ 1х4","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":35.26,"currency":"RUB","priceTiers":[{"minQty":1000,"price":33.14},{"minQty":4000,"price":30.68}],"moq":200,"packSize":100,"stock":"уточняется","leadDays":28,"updatedAt":"2026-09-12","source":"demo"},{"id":"o80","supplierId":"stroypostavka-2","name":"Кабель ВВГнг(А)-LS 5х6","brand":"Севкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"5х6","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":210.98,"currency":"RUB","priceTiers":[{"minQty":250,"price":198.32},{"minQty":1000,"price":183.55}],"moq":50,"packSize":10,"stock":"уточняется","leadDays":23,"updatedAt":"2026-05-15","source":"demo"},{"id":"o81","supplierId":"stroypostavka-2","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":95.66,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"в наличии","leadDays":25,"updatedAt":"2026-06-10","source":"demo"},{"id":"o82","supplierId":"promresurs-2","name":"Скотч упаковочный 48мм х 66м","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":58.96,"currency":"RUB","priceTiers":[],"moq":100,"packSize":100,"stock":"под заказ","leadDays":17,"updatedAt":"2026-07-26","source":"demo"},{"id":"o83","supplierId":"promresurs-2","name":"Стретч-плёнка 500мм 17мкм","brand":"СФТ Пакеджинг","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":283.99,"currency":"RUB","priceTiers":[{"minQty":250,"price":266.95},{"minQty":1000,"price":247.07}],"moq":50,"packSize":1,"stock":"уточняется","leadDays":11,"updatedAt":"2026-07-05","source":"demo"},{"id":"o84","supplierId":"tehnolayn-2","name":"Каска защитная","brand":"Ампаро","category":"Спецодежда и СИЗ","attrs":{"размер":"универсальный","материал":"ABS","класс":"ГОСТ 12.4.207"},"unit":"pcs","price":299.26,"currency":"RUB","priceTiers":[{"minQty":500,"price":281.3},{"minQty":2000,"price":260.36}],"moq":100,"packSize":100,"stock":"в наличии","leadDays":24,"updatedAt":"2026-06-24","source":"demo"},{"id":"o85","supplierId":"tehnolayn-2","name":"Перчатки нитриловые (пара)","brand":"Ампаро","category":"Спецодежда и СИЗ","attrs":{"размер":"10","материал":"нитрил","класс":"МБС"},"unit":"pcs","price":89.74,"currency":"RUB","priceTiers":[{"minQty":50,"price":84.36},{"minQty":200,"price":78.07}],"moq":10,"packSize":1,"stock":"в наличии","leadDays":16,"updatedAt":"2026-04-30","source":"demo"},{"id":"o86","supplierId":"tehnolayn-2","name":"Ботинки кожаные с МП","brand":"Ампаро","category":"Спецодежда и СИЗ","attrs":{"размер":"43","подносок":"металл","класс":"200 Дж"},"unit":"pcs","price":3469.72,"currency":"RUB","priceTiers":[{"minQty":250,"price":3261.54},{"minQty":1000,"price":3018.66}],"moq":50,"packSize":1,"stock":"под заказ","leadDays":23,"updatedAt":"2026-05-27","source":"demo"},{"id":"o87","supplierId":"tehnolayn-2","name":"Костюм рабочий летний","brand":"Delta Plus","category":"Спецодежда и СИЗ","attrs":{"размер":"52-54","ткань":"смесовая 65/35","класс":"1 класс защиты"},"unit":"pcs","price":3174.54,"currency":"RUB","priceTiers":[{"minQty":50,"price":2984.07},{"minQty":200,"price":2761.85}],"moq":10,"packSize":10,"stock":"уточняется","leadDays":22,"updatedAt":"2026-08-02","source":"demo"},{"id":"o88","supplierId":"tehnolayn-2","name":"Стретч-плёнка 500мм 17мкм","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":208.82,"currency":"RUB","priceTiers":[{"minQty":500,"price":196.29},{"minQty":2000,"price":181.67}],"moq":100,"packSize":100,"stock":"под заказ","leadDays":19,"updatedAt":"2026-08-10","source":"demo"},{"id":"o89","supplierId":"tehnolayn-2","name":"Короб гофрокартон Т-23 400х300х300","brand":"СФТ Пакеджинг","category":"Упаковка","attrs":{"марка":"Т-23","размер":"400х300х300","слой":"трёхслойный"},"unit":"pcs","price":56.55,"currency":"RUB","priceTiers":[],"moq":10,"packSize":100,"stock":"под заказ","leadDays":15,"updatedAt":"2026-07-31","source":"demo"},{"id":"o90","supplierId":"tehnolayn-2","name":"Скотч упаковочный 48мм х 66м","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":83.51,"currency":"RUB","priceTiers":[],"moq":500,"packSize":10,"stock":"под заказ","leadDays":14,"updatedAt":"2026-08-09","source":"demo"},{"id":"o91","supplierId":"tehnolayn-2","name":"Паллет деревянный EUR 1200х800","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"размер":"1200х800","сорт":"1 сорт","обработка":"фитосанитарная"},"unit":"pcs","price":806.04,"currency":"RUB","priceTiers":[],"moq":1000,"packSize":1,"stock":"уточняется","leadDays":16,"updatedAt":"2026-09-09","source":"demo"},{"id":"o92","supplierId":"severtorg-2","name":"Кабель ВВГнг(А)-LS 3х1,5","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х1,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":61.16,"currency":"RUB","priceTiers":[],"moq":500,"packSize":1,"stock":"в наличии","leadDays":15,"updatedAt":"2026-07-18","source":"demo"},{"id":"o93","supplierId":"severtorg-2","name":"Кабель ВВГнг(А)-LS 5х6","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"5х6","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":235.91,"currency":"RUB","priceTiers":[{"minQty":500,"price":221.76},{"minQty":2000,"price":205.24}],"moq":100,"packSize":1,"stock":"в наличии","leadDays":8,"updatedAt":"2026-08-25","source":"demo"},{"id":"o94","supplierId":"severtorg-2","name":"Стретч-плёнка 500мм 17мкм","brand":"Упакс-Юнити","category":"Упаковка","attrs":{"ширина":"500 мм","толщина":"17 мкм","намотка":"1,5 кг"},"unit":"pcs","price":198.84,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"в наличии","leadDays":12,"updatedAt":"2026-08-07","source":"demo"},{"id":"o95","supplierId":"severtorg-2","name":"Скотч упаковочный 48мм х 66м","brand":"СФТ Пакеджинг","category":"Упаковка","attrs":{"ширина":"48 мм","длина":"66 м","основа":"БОПП"},"unit":"pcs","price":51.11,"currency":"RUB","priceTiers":[{"minQty":5000,"price":48.04},{"minQty":20000,"price":44.47}],"moq":1000,"packSize":10,"stock":"в наличии","leadDays":13,"updatedAt":"2026-09-09","source":"demo"},{"id":"o96","supplierId":"megasnab-2","name":"Провод ПуГВ 1х4","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"1х4","изоляция":"ПВХ","гост":"31947-2012"},"unit":"m","price":28.18,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"уточняется","leadDays":21,"updatedAt":"2026-07-28","source":"demo"},{"id":"o97","supplierId":"megasnab-2","name":"Кабель ВВГнг(А)-LS 3х1,5","brand":"Рыбинсккабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х1,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":58.07,"currency":"RUB","priceTiers":[],"moq":200,"packSize":100,"stock":"уточняется","leadDays":15,"updatedAt":"2026-04-30","source":"demo"},{"id":"o98","supplierId":"megasnab-2","name":"Кабель АВБбШв 4х16","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"алюминий","сечение":"4х16","изоляция":"ПВХ","гост":"16442-80"},"unit":"m","price":141.71,"currency":"RUB","priceTiers":[],"moq":200,"packSize":100,"stock":"в наличии","leadDays":12,"updatedAt":"2026-06-10","source":"demo"},{"id":"o99","supplierId":"megasnab-2","name":"Кабель ВВГнг(А)-LS 3х2,5","brand":"Электрокабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"3х2,5","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":93.93,"currency":"RUB","priceTiers":[],"moq":200,"packSize":100,"stock":"под заказ","leadDays":20,"updatedAt":"2026-09-04","source":"demo"},{"id":"o100","supplierId":"megasnab-2","name":"Кабель ВВГнг(А)-LS 5х6","brand":"Камкабель","category":"Кабель и провод","attrs":{"жила":"медь","сечение":"5х6","изоляция":"ПВХ нг-LS","гост":"31996-2012"},"unit":"m","price":298.78,"currency":"RUB","priceTiers":[{"minQty":250,"price":280.85},{"minQty":1000,"price":259.94}],"moq":50,"packSize":1,"stock":"под заказ","leadDays":17,"updatedAt":"2026-05-28","source":"demo"},{"id":"o101","supplierId":"uralkomplekt-2","name":"Анкер клиновой М10х100","brand":"Fischer","category":"Крепёж","attrs":{"материал":"сталь оцинкованная","размер":"М10х100","покрытие":"цинк"},"unit":"pcs","price":25.11,"currency":"RUB","priceTiers":[{"minQty":2500,"price":23.6},{"minQty":10000,"price":21.85}],"moq":500,"packSize":10,"stock":"уточняется","leadDays":24,"updatedAt":"2026-08-03","source":"demo"},{"id":"o102","supplierId":"uralkomplekt-2","name":"Саморез по дереву 4,2х75","brand":"Метизстандарт","category":"Крепёж","attrs":{"материал":"сталь","размер":"4,2х75","покрытие":"фосфат"},"unit":"pcs","price":1.87,"currency":"RUB","priceTiers":[],"moq":100,"packSize":1,"stock":"под заказ","leadDays":15,"updatedAt":"2026-08-04","source":"demo"},{"id":"o103","supplierId":"uralkomplekt-2","name":"Болт М12х60 DIN 933","brand":"Метизстандарт","category":"Крепёж","attrs":{"материал":"сталь 8.8","размер":"М12х60","покрытие":"цинк"},"unit":"pcs","price":10.56,"currency":"RUB","priceTiers":[],"moq":1000,"packSize":10,"stock":"в наличии","leadDays":20,"updatedAt":"2026-06-06","source":"demo"},{"id":"o104","supplierId":"uralkomplekt-2","name":"Дюбель-гвоздь 6х40","brand":"Fischer","category":"Крепёж","attrs":{"материал":"нейлон","размер":"6х40","покрытие":"нет"},"unit":"pcs","price":0.91,"currency":"RUB","priceTiers":[],"moq":1000,"packSize":10,"stock":"под заказ","leadDays":16,"updatedAt":"2026-07-15","source":"demo"}],"categories":[{"slug":"kabel-i-provod","name":"Кабель и провод","unit":"m","attrKeys":["жила","сечение","изоляция","гост"]},{"slug":"krepezh","name":"Крепёж","unit":"pcs","attrKeys":["материал","размер","покрытие"]},{"slug":"specodezhda-i-siz","name":"Спецодежда и СИЗ","unit":"pcs","attrKeys":["размер","ткань","класс","подносок","материал"]},{"slug":"upakovka","name":"Упаковка","unit":"pcs","attrKeys":["марка","размер","слой","ширина","толщина","намотка","длина","основа","сорт","обработка"]}]};
+/* ---------------- данные и словари ---------------- */
+const DB = { suppliers: DATA.suppliers, offers: DATA.offers };
+const UNITS = [["", "—"], ["pcs", "шт"], ["m", "м"], ["kg", "кг"], ["t", "т"], ["l", "л"], ["m2", "м²"], ["m3", "м³"]];
+const UNIT_LABEL = Object.fromEntries(UNITS);
+const TYPES = ["производитель", "дистрибьютор", "импортёр", "трейдер"];
+const PAY = ["предоплата", "отсрочка 14", "отсрочка 30", "аккредитив", "наличные"];
+const AXES = [["product", "Товар"], ["price", "Цена"], ["logistics", "Логистика"], ["trust", "Надёжность"]];
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const rub = (n) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 2 }));
+const pct = (x) => Math.round(x * 100);
+const unitOf = (u) => UNIT_LABEL[u] ?? u;
+
+function fillSelect(node, items, placeholder, selected) {
+  node.innerHTML = (placeholder ? `<option value="">${esc(placeholder)}</option>` : "") +
+    items.map(([v, l]) => `<option value="${esc(v)}"${v === selected ? " selected" : ""}>${esc(l)}</option>`).join("");
+}
+
+const regions = [...new Set(DB.suppliers.flatMap((s) => [s.region, ...(s.shipsTo ?? [])]))]
+  .filter((r) => r && r !== "Россия").sort((a, b) => a.localeCompare(b, "ru"));
+
+fillSelect(el("f-cat"), DATA.categories.map((c) => [c.name, c.name]), "любая");
+fillSelect(el("f-unit"), UNITS.filter(([v]) => v), null, "m");
+fillSelect(el("f-region"), regions.map((r) => [r, r]), "любой", "Москва");
+fillSelect(el("f-type"), TYPES.map((t) => [t, t]), "любой");
+fillSelect(el("f-pay"), PAY.map((p) => [p, p]), "любые");
+
+let mode = "b2b";
+document.querySelectorAll(".mode button").forEach((b) => {
+  b.addEventListener("click", () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll(".mode button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    run();
+  });
+});
+
+/* ---------------- сборка запроса ---------------- */
+function currentQuery() {
+  const numOr = (id) => (el(id).value.trim() === "" ? null : Number(el(id).value));
+  return {
+    mode,
+    text: el("f-text").value.trim(),
+    category: el("f-cat").value,
+    qty: numOr("f-qty"),
+    unit: el("f-unit").value,
+    region: el("f-region").value,
+    leadDaysMax: numOr("f-lead"),
+    budgetPerUnit: numOr("f-budget"),
+    supplierTypes: el("f-type").value ? [el("f-type").value] : [],
+    paymentTerms: el("f-pay").value ? [el("f-pay").value] : [],
+    requireVerified: el("f-inn").checked,
+    limit: 20,
+  };
+}
+
+/* ---------------- отрисовка ---------------- */
+function chips(r) {
+  const s = r.supplier, o = r.offer;
+  const out = [
+    `<span class="chip">${esc(s.type)}</span>`,
+    `<span class="chip">${esc(s.region)}</span>`,
+  ];
+  if (validInn(s.inn)) out.push(`<span class="chip on">ИНН ${esc(s.inn)}</span>`);
+  else out.push(`<span class="chip">ИНН не подтверждён</span>`);
+  if (s.verified?.egrul) out.push(`<span class="chip on">ЕГРЮЛ</span>`);
+  if (o.stock === "в наличии") out.push(`<span class="chip on">в наличии</span>`);
+  if (o.moq) out.push(`<span class="chip hl">партия от ${rub(o.moq)} ${esc(unitOf(o.unit))}</span>`);
+  const lead = o.leadDays ?? s.leadDays;
+  if (lead != null) out.push(`<span class="chip">${lead} дн.</span>`);
+  (s.paymentTerms ?? []).forEach((p) => out.push(`<span class="chip">${esc(p)}</span>`));
+  return out.join("");
+}
+
+function meters(b) {
+  return AXES.map(([k, label]) => `
+    <div class="meter${b[k] < 0.5 ? " low" : ""}">
+      <div class="cap"><span>${label}</span><b>${pct(b[k])}</b></div>
+      <div class="track"><i style="width:${pct(b[k])}%"></i></div>
+    </div>`).join("");
+}
+
+function supplierDetail(r) {
+  const s = r.supplier;
+  const own = DB.offers.filter((o) => o.supplierId === s.id);
+  const rows = own.map((o) => `
+    <tr>
+      <td>${esc(o.name)}${o.id === r.offer.id ? ' <span class="chip hl">подобрано</span>' : ""}</td>
+      <td>${esc(o.brand ?? "—")}</td>
+      <td class="n">${rub(o.price)} ₽/${esc(unitOf(o.unit))}${
+        (o.priceTiers ?? []).length
+          ? `<br><span style="color:var(--muted)">${o.priceTiers.map((t) => `от ${rub(t.minQty)} — ${rub(t.price)} ₽`).join("<br>")}</span>`
+          : ""}</td>
+      <td class="n">${o.moq ? rub(o.moq) : "—"}</td>
+      <td class="n">${o.leadDays != null ? o.leadDays + " дн." : "—"}</td>
+      <td class="n">${esc(o.updatedAt ?? "—")}</td>
+    </tr>`).join("");
+  return `
+    <div class="detail">
+      <h4>Все позиции поставщика (${own.length})</h4>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Позиция</th><th>Бренд</th><th>Цена</th><th>Партия от</th><th>Срок</th><th>Цена от</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="contact">
+        ${esc(s.legalName ?? s.name)} · на рынке ${s.yearsOnMarket ?? "—"} лет · рейтинг ${s.rating ?? "—"}/5 ·
+        мин. заказ ${s.minOrderRub ? rub(s.minOrderRub) + " ₽" : "без ограничения"}<br>
+        ${esc(s.phone ?? "")} ${esc(s.email ?? "")} ${esc(s.site ?? "")}<br>
+        сертификаты: ${esc((s.certifications ?? []).join(", ") || "не заявлены")}
+      </div>
+    </div>`;
+}
+
+function rowHtml(r, i) {
+  const why = [
+    ...r.reasons.product.slice(0, 1),
+    ...r.reasons.price.slice(0, 2),
+    ...r.reasons.logistics.slice(0, 2),
+    ...r.reasons.trust.slice(0, 2),
+  ];
+  return `
+  <details class="row">
+    <summary>
+      <div class="row-top">
+        <div class="rank">${String(i + 1).padStart(2, "0")}</div>
+        <div>
+          <div class="name">${esc(r.supplier.name)}</div>
+          <div class="item">${esc(r.offer.name)}${r.offer.brand ? " · " + esc(r.offer.brand) : ""}</div>
+          <div class="chips">${chips(r)}</div>
+        </div>
+        <div class="money">
+          <span class="u">${rub(r.unitPrice)} ₽</span><span style="font-size:13px">/${esc(unitOf(r.offer.unit))}</span>
+          ${r.total !== null ? `<span class="t">партия ${rub(r.total)} ₽</span>` : ""}
+          ${r.offer.updatedAt ? `<span class="d">цена от ${esc(r.offer.updatedAt)}</span>` : ""}
+        </div>
+        <div class="total">
+          <div class="mark">${pct(r.score)}</div>
+          <div class="mark-cap">балл</div>
+        </div>
+      </div>
+      <div class="meters">${meters(r.breakdown)}</div>
+      <div class="why">${why.map((t) => `<span>${esc(t)}</span>`).join("")}</div>
+      <div class="open">Все позиции и контакты ▾</div>
+    </summary>
+    ${supplierDetail(r)}
+  </details>`;
+}
+
+function cutHtml(excluded) {
+  if (!excluded.length) return "";
+  const grouped = new Map();
+  for (const e of excluded) {
+    const k = e.name + "|" + e.reason;
+    grouped.set(k, (grouped.get(k) ?? 0) + 1);
+  }
+  const byReason = new Map();
+  for (const e of excluded) byReason.set(e.reason, (byReason.get(e.reason) ?? 0) + 1);
+  const summary = [...byReason.entries()].sort((a, b) => b[1] - a[1])
+    .map(([reason, n]) => `<tr><td>${esc(reason)}</td><td class="n">${n}</td></tr>`).join("");
+  const rows = [...grouped.entries()].slice(0, 40)
+    .map(([k, n]) => {
+      const [name, reason] = k.split("|");
+      return `<tr><td>${esc(name)}</td><td>${esc(reason)}</td><td class="n">${n}</td></tr>`;
+    }).join("");
+  return `
+  <details class="cut">
+    <summary>Кого и почему отсеяли · <b>${excluded.length}</b> предложений</summary>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Причина</th><th>Предложений</th></tr></thead>
+        <tbody>${summary}</tbody>
+      </table>
+      <table style="margin-top:18px">
+        <thead><tr><th>Поставщик</th><th>Причина</th><th>Позиций</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </details>`;
+}
+
+function run() {
+  const q = currentQuery();
+  const { results, excluded, weights } = search(q, DB);
+  el("tally").innerHTML = `
+    <div><b>${results.length}</b> <span class="unit">поставщиков</span></div>
+    <div><b>${excluded.length}</b> <span class="unit">предложений отсеяно</span></div>
+    <div><b>${DB.offers.length}</b> <span class="unit">в базе</span></div>
+    <div class="weights">веса ${q.mode}: товар ${pct(weights.product)} · цена ${pct(weights.price)} · логистика ${pct(weights.logistics)} · надёжность ${pct(weights.trust)}</div>`;
+  el("out").innerHTML = results.length
+    ? results.map(rowHtml).join("")
+    : `<div class="void">Под эти параметры поставщиков нет. Ослабьте условия: увеличьте срок,
+       снимите требование по ИНН, уменьшите объём партии или уберите фильтр по условиям оплаты.</div>`;
+  el("cut").innerHTML = cutHtml(excluded);
+}
+
+el("q").addEventListener("submit", (e) => { e.preventDefault(); run(); });
+el("q").addEventListener("change", run);
+run();
+
+</script>
